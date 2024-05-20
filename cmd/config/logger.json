@@ -1,0 +1,12 @@
+{
+    "console": {
+        "enabled": true,
+        "level": "trace"
+    },
+    "file": {
+        "enabled": true,
+        "level": "trace",
+        "path": "./log",
+        "persist": 90
+    }
+}
