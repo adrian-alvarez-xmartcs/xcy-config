@@ -7,6 +7,10 @@
             "Port": "5432",
             "User": "postgres",
             "Password": "secretpassword"
-        }
+        },
+        "Databases": ["Production", "Testing"]
+    },
+    "Backend": {
+        "Port": ":8080"
     }
 }

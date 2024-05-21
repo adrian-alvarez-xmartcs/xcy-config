@@ -7,6 +7,6 @@
         "enabled": true,
         "level": "trace",
         "path": "./log",
-        "persist": 90
+        "persist": 7
     }
 }
