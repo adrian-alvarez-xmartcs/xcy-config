@@ -36,7 +36,7 @@ interface CheckInInstance {
 
 const ApiBackend = {
     Auth: {
-        Login: async (user: User) => {
+        Login: async (user: { username: string; password: string; workspace: string }) => {
             const url = `${BASE}/api/auth/login`;
             return await basic_post(url, user);
         },

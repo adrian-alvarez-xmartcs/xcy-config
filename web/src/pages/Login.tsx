@@ -1,33 +1,48 @@
 import React, { useState, useEffect } from 'react';
-// import { useUser } from "../contexts/UserContext";
+import { useUser } from "../contexts/UserContext";
+import { useNavigate } from 'react-router-dom';
 import { TextField, Button, Container, Box, Typography, Autocomplete } from '@mui/material';
 import ApiBackend from "../apis/ApiBackend";
+
 interface Workspace {
     Id: number;
     Name: string;
 }
 
-const LoginPage = () => {
-    // const userCtx = useUser();
+const LoginPage: React.FC = () => {
+    const userCtx = useUser();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [loginAttempted, setLoginAttempted] = useState(false);
     const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
     const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchWorkspaces = async () => {
-            const response = await ApiBackend.Workspace.Get()
-            console.log(response.data)
-            setWorkspaces(response.data);
+            try {
+                const response = await ApiBackend.Workspace.Get();
+                setWorkspaces(response.data);
+            } catch (error) {
+                console.error('Error fetching workspaces:', error);
+            }
         };
 
         fetchWorkspaces();
     }, []);
 
-    const handleLogin = (event: React.FormEvent) => {
+    const handleLogin = async (event: React.FormEvent) => {
         event.preventDefault();
         setLoginAttempted(true);
+        localStorage.clear();
+
+        if (selectedWorkspace && username && password) {
+            const isLoggedIn = await userCtx.Login(username, password, selectedWorkspace.Name);
+            console.log(username, password, selectedWorkspace.Name)
+            if (isLoggedIn) {
+                navigate("/ui/library");
+            }
+        }
     };
 
     return (
@@ -48,23 +63,23 @@ const LoginPage = () => {
                     Xcylla
                 </Typography>
                 <Box py={2}>
-                <Autocomplete
-                    options={workspaces}
-                    getOptionLabel={(option) => option.Name}
-                    value={selectedWorkspace}
-                    onChange={(event, newValue) => {
-                        setSelectedWorkspace(newValue);
-                    }}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            label="Select Workspace"
-                            variant="outlined"
-                            fullWidth
-                            required
-                        />
-                    )}
-                />
+                    <Autocomplete
+                        options={workspaces}
+                        getOptionLabel={(option) => option.Name}
+                        value={selectedWorkspace}
+                        onChange={(event, newValue) => {
+                            setSelectedWorkspace(newValue);
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Select Workspace"
+                                variant="outlined"
+                                fullWidth
+                                required
+                            />
+                        )}
+                    />
                 </Box>
                 <Box py={2}>
                     <TextField
