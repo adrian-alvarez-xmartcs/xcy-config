@@ -1,46 +1,55 @@
 import { createContext, useContext, ReactNode, useState } from "react";
-import { User } from "../entities/Auth";
+import { ExtendedUser } from "../entities/Auth";
+import ApiBackend from "../apis/ApiBackend";
 
-interface UserContextType extends User {
-    Login: (user:string, password:string) => void
+interface UserContextType extends ExtendedUser {
+    Login: (username: string, password: string, workspace: string) => Promise<boolean>;
 }
 
-const UserContext = createContext<UserContextType | undefined>(undefined)
+const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const useUser = () => {
     const context = useContext(UserContext);
     if (!context) {
-        throw new Error("useUser must be used within a UserProvider")
+        throw new Error("useUser must be used within a UserProvider");
     }
-    return context
+    return context;
 }
 
-const INITIAL_STATE:User = {
+const INITIAL_STATE: ExtendedUser = {
     name: "",
-}
+    workspace: ""
+};
 
-const UserProviderInternal = ({children}: {children: ReactNode}) => {
-    const [user, setUser] = useState<User>(INITIAL_STATE)
+const UserProviderInternal = ({ children }: { children: ReactNode }) => {
+    const [user, setUser] = useState<ExtendedUser>(INITIAL_STATE);
 
-    const Login = (user:string, password:string) => {
-        console.log("asdas")
-        setUser(prevState => ({
-            ...prevState,
-            name: user + password
-        }))
-    }
+    const Login = async (username: string, password: string, workspace: string): Promise<boolean> => {
+        try {
+            const response = await ApiBackend.Auth.Login({ username, password, workspace });
+            if (response.ok) {
+                setUser({ name: username, workspace });
+                return true;
+            } else {
+                return false;
+            }
+        } catch (error) {
+            console.error("Login error:", error);
+            return false;
+        }
+    };
 
     return (
-        <UserContext.Provider value={{...user, Login}}>
+        <UserContext.Provider value={{ ...user, Login }}>
             {children}
         </UserContext.Provider>
-    ) 
+    );
 }
 
-export const UserProvider = ({children}: {children: ReactNode}) => {
+export const UserProvider = ({ children }: { children: ReactNode }) => {
     return (
         <UserProviderInternal>
             {children}
         </UserProviderInternal>
-    )
+    );
 }

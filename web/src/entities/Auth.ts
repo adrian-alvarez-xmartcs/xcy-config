@@ -1,3 +1,6 @@
 export interface User {
-    name: string
+    name: string;
+}
+export interface ExtendedUser extends User {
+    workspace: string;
 }
