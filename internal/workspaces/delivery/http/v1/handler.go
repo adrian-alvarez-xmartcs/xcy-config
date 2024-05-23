@@ -2,10 +2,10 @@ package v1
 
 import (
 	"context"
-	"time"
 
 	"xcylla.io/common/log"
 	"xcylla.io/config/internal/workspaces"
+	"xcylla.io/config/pkg/constant"
 	"xcylla.io/config/pkg/router"
 )
 
@@ -14,14 +14,14 @@ type handlers struct {
 	log log.Logger
 }
 
-func NewHandlers(uc workspaces.Usecase) *handlers {
+func NewWorkspacesHandlers(uc workspaces.Usecase) *handlers {
 	return &handlers{uc, log.NewLogger("WorkspacesHandler")}
 }
 
 func (h *handlers) GetWorkspaces(c router.RouterContext) {
-	h.log.Debug("New GetWorkspaces handler")
+	h.log.Info("New GetWorkspaces handler started")
 	var (
-		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel = context.WithTimeout(context.Background(), constant.DurationHandlerContext)
 	)
 	defer cancel()
 
@@ -32,6 +32,6 @@ func (h *handlers) GetWorkspaces(c router.RouterContext) {
 		return
 	}
 
-	h.log.Debug("Returning GetWorkspaces result")
+	h.log.Info("Returning GetWorkspaces result")
 	c.ReturnOK(res)
 }

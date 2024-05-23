@@ -1,10 +1,14 @@
 package app
 
 import (
-	v1 "xcylla.io/config/internal/workspaces/delivery/http/v1"
-	"xcylla.io/config/internal/workspaces/entities"
-	"xcylla.io/config/internal/workspaces/repository"
-	"xcylla.io/config/internal/workspaces/usecase"
+	workspaceV1 "xcylla.io/config/internal/workspaces/delivery/http/v1"
+	workspaceEntities "xcylla.io/config/internal/workspaces/entities"
+	workspaceRepository "xcylla.io/config/internal/workspaces/repository"
+	workspaceUsecase "xcylla.io/config/internal/workspaces/usecase"
+
+	userV1 "xcylla.io/config/internal/users/delivery/http/v1"
+	userRepository "xcylla.io/config/internal/users/repository"
+	userUsecase "xcylla.io/config/internal/users/usecase"
 )
 
 func (app *App) startService() error {
@@ -15,11 +19,15 @@ func (app *App) startService() error {
 		}
 	}
 
-	workspaceRepo := repository.NewWorkspacesRepository(app.db)
-	workspaceUsecase := usecase.NewUseCase(workspaceRepo, app.cfg)
-	workspaceRoute := v1.NewHandlers(workspaceUsecase)
+	workspaceRepo := workspaceRepository.NewWorkspacesRepository(app.db)
+	workspaceUsecase := workspaceUsecase.NewWorkspacesUsecase(workspaceRepo)
+	workspaceRoute := workspaceV1.NewWorkspacesHandlers(workspaceUsecase)
+	workspaceRoute.WorkspacesRoutes(app.router) //Routes
 
-	workspaceRoute.WorkspacesRoutes(app.router)
+	userRepo := userRepository.NewUsersRepository(app.db)
+	userUsecase := userUsecase.NewUsersUsecase(userRepo, workspaceUsecase)
+	userRoute := userV1.NewUsersHandlers(userUsecase)
+	userRoute.UserRoutes(app.router) //Routes
 
 	return nil
 }
@@ -27,7 +35,7 @@ func (app *App) startService() error {
 func (app *App) MigrationTables() []error {
 	var err []error
 
-	err = append(err, app.db.MainDb.AutoMigrate(&entities.Def_Workspace{}))
+	err = append(err, app.db.MainDb.AutoMigrate(&workspaceEntities.Def_Workspace{}))
 
 	return err
 }

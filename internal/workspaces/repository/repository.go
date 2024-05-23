@@ -16,7 +16,10 @@ type repository struct {
 }
 
 func NewWorkspacesRepository(db *database.Database) workspaces.Repository {
-	return &repository{db: db.MainDb, log: log.NewLogger("WorkspacesRepository")}
+	return &repository{
+		db:  db.MainDb,
+		log: log.NewLogger("WorkspacesRepository"),
+	}
 }
 
 func (r *repository) Atomic(ctx context.Context, repo func(tx workspaces.Repository) error) error {
@@ -40,7 +43,7 @@ func (r *repository) Atomic(ctx context.Context, repo func(tx workspaces.Reposit
 }
 
 func (r *repository) GetWorkspaces(ctx context.Context) ([]entities.Def_Workspace, error) {
-	r.log.Debug("Getting Workspaces from repository")
+	r.log.Trace("Getting Workspaces from repository")
 	var workspaces []entities.Def_Workspace
 
 	tx := r.db.Model(&entities.Def_Workspace{}).Find(&workspaces)
@@ -49,6 +52,20 @@ func (r *repository) GetWorkspaces(ctx context.Context) ([]entities.Def_Workspac
 		return nil, tx.Error
 	}
 
-	r.log.Debug("Returning Workspaces from repository")
+	r.log.Trace("Returning Workspaces from repository")
 	return workspaces, nil
+}
+
+func (r *repository) GetWorkspace(ctx context.Context, workspaceName string) (entities.Def_Workspace, error) {
+	r.log.Trace("Getting Workspace from repository")
+	var workspace entities.Def_Workspace
+
+	tx := r.db.Model(&entities.Def_Workspace{}).Where("name = ?", workspaceName).First(&workspace)
+	if tx.Error != nil {
+		r.log.Error("Unable to get workspace")
+		return entities.Def_Workspace{}, tx.Error
+	}
+
+	r.log.Trace("Returning Workspace from repository")
+	return workspace, nil
 }

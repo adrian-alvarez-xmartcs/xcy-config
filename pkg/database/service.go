@@ -16,6 +16,6 @@ func LoadWorkspaceData(db *gorm.DB, cfg config.DatabaseConfig) {
 	}
 }
 
-func LoadUserData(db *gorm.DB, cfg config.DatabaseConfig) {
-	mock.FillUser(db)
+func LoadUserData(db *gorm.DB) {
+	mock.FillUserData(db)
 }

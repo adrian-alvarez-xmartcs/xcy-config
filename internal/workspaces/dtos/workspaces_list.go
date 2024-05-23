@@ -4,7 +4,8 @@ type (
 	WorkspaceArrayResponse []WorkspaceResponse
 
 	WorkspaceResponse struct {
-		Id   int
-		Name string
+		Id          int
+		Name        string
+		Description string
 	}
 )
