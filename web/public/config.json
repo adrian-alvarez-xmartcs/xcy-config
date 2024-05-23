@@ -1,0 +1,6 @@
+{
+    "Backend": {
+        "Ip": "http://localhost",
+        "Port": "8080"
+    }
+}
