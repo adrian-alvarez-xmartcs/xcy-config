@@ -9,5 +9,5 @@ import (
 type Repository interface {
 	Atomic(ctx context.Context, repo func(tx Repository) error) error
 
-	GetWorkspaces(context.Context) ([]entities.Workspace, error)
+	GetWorkspaces(context.Context) ([]entities.Def_Workspace, error)
 }
