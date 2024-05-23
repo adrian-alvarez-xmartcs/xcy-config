@@ -1,14 +1,26 @@
 {
     "Database": {
-        "Provider": "sqlite",
-        "Postgres": {
-            "Database": "postgres",
-            "Ip": "localhost",
-            "Port": "5432",
-            "User": "postgres",
-            "Password": "secretpassword"
-        },
-        "Databases": ["Production", "Testing"]
+        "Folder": "database",
+        "Db": {
+            "Production": {
+                "Provider": "sqlite",
+                "Description": "Production database",
+                "Data": {
+                    "DatabaseName": "Production"
+                }
+            },
+            "Test": {
+                "Provider": "postgres",
+                "Description": "Database for testing",
+                "Data": {
+                    "Database": "postgres",
+                    "Ip": "localhost",
+                    "Port": "5432",
+                    "User": "postgres",
+                    "Password": "secretpassword"
+                }
+            }
+        }
     },
     "Backend": {
         "Port": ":8080"

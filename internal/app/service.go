@@ -14,7 +14,6 @@ func (app *App) startService() error {
 			app.log.Error("Error automigrating: ", e)
 		}
 	}
-	app.ServiceMock()
 
 	workspaceRepo := repository.NewWorkspacesRepository(app.db)
 	workspaceUsecase := usecase.NewUseCase(workspaceRepo, app.cfg)
@@ -28,14 +27,7 @@ func (app *App) startService() error {
 func (app *App) MigrationTables() []error {
 	var err []error
 
-	err = append(err, app.db.AutoMigrate(&entities.Workspace{}))
+	err = append(err, app.db.MainDb.AutoMigrate(&entities.Def_Workspace{}))
 
 	return err
-}
-
-func (app *App) ServiceMock() {
-	app.log.Info("Loading test data")
-
-	app.db.Create(&entities.Workspace{Name: "Production", Description: "Production workspace"})
-	app.db.Create(&entities.Workspace{Name: "Testing", Description: "Workspace for testings"})
 }

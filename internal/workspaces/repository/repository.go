@@ -7,6 +7,7 @@ import (
 	"xcylla.io/common/log"
 	"xcylla.io/config/internal/workspaces"
 	"xcylla.io/config/internal/workspaces/entities"
+	"xcylla.io/config/pkg/database"
 )
 
 type repository struct {
@@ -14,8 +15,8 @@ type repository struct {
 	log log.Logger
 }
 
-func NewWorkspacesRepository(db *gorm.DB) workspaces.Repository {
-	return &repository{db: db, log: log.NewLogger("WorkspacesRepository")}
+func NewWorkspacesRepository(db *database.Database) workspaces.Repository {
+	return &repository{db: db.MainDb, log: log.NewLogger("WorkspacesRepository")}
 }
 
 func (r *repository) Atomic(ctx context.Context, repo func(tx workspaces.Repository) error) error {
@@ -38,11 +39,11 @@ func (r *repository) Atomic(ctx context.Context, repo func(tx workspaces.Reposit
 	return nil
 }
 
-func (r *repository) GetWorkspaces(ctx context.Context) ([]entities.Workspace, error) {
+func (r *repository) GetWorkspaces(ctx context.Context) ([]entities.Def_Workspace, error) {
 	r.log.Debug("Getting Workspaces from repository")
-	var workspaces []entities.Workspace
+	var workspaces []entities.Def_Workspace
 
-	tx := r.db.Model(&entities.Workspace{}).Find(&workspaces)
+	tx := r.db.Model(&entities.Def_Workspace{}).Find(&workspaces)
 	if tx.Error != nil {
 		r.log.Error("Unable to get workspaces")
 		return nil, tx.Error

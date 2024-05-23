@@ -7,98 +7,91 @@ import (
 
 	"xcylla.io/common/log"
 	"xcylla.io/config/pkg/config"
+	"xcylla.io/config/pkg/database/migration"
 
-	"github.com/glebarez/sqlite"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
-const (
-	_sqlite   = "sqlite"
-	_postgres = "postgres"
-)
+// const (
+// 	_sqlite   = "sqlite"
+// 	_postgres = "postgres"
+// )
+
+type Database struct {
+	MainDb   *gorm.DB
+	SystemDb *gorm.DB
+	Database *gorm.DB
+}
 
 var (
-	db               = &gorm.DB{}
-	logging          = log.NewLogger("Database")
-	databaseMainName = "database.db"
+	logging      = log.NewLogger("Database")
+	mainDbName   = "main"
+	systemDbName = "system"
 )
 
-func Initialize(cfg config.DatabaseConfig) *gorm.DB {
-	logging.Trace("Initializing database")
+func Initialize(cfg config.DatabaseConfig) *Database {
+	logging.Trace("Initializing databases")
+	var db Database
 
-	execPath, err := os.Executable()
-	if err != nil {
-		logging.Error("Error getting executable path:", err)
-		return nil
-	}
-	databaseNameFolder := filepath.Join(filepath.Dir(execPath), "..", "database")
-
-	if _, err := os.Stat(databaseNameFolder); os.IsNotExist(err) {
-		if os.Mkdir(databaseNameFolder, os.ModePerm) != nil {
-			logging.Error("Error creating database folder")
-			return nil
-		}
-	} else {
-		os.Remove(filepath.Join(databaseNameFolder, databaseMainName))
+	db.MainDb = connect_SQLITE(cfg.Folder, mainDbName+".db")
+	if db.MainDb == nil {
+		logging.Error("Failed to connect to main database")
+		panic("Failed to connect to main database")
 	}
 
-	switch cfg.Provider {
-	case _sqlite:
-		logging.Trace("Database provider SQLite")
-		db = connect_SQLITE(databaseNameFolder)
-	case _postgres:
-		logging.Trace("Database provider POSTGRE")
-		postgres := cfg.Postgres
-		db = connect_POSTGRE(postgres.Ip, postgres.User, postgres.Password, postgres.Database, postgres.Port)
+	db.SystemDb = connect_SQLITE(cfg.Folder, systemDbName+".db")
+	if db.SystemDb == nil {
+		logging.Error("Failed to connect to system database")
+		panic("Failed to connect to system database")
 	}
+
+	migration.MigrateMainTables(db.MainDb)
+	LoadWorkspaceData(db.MainDb, cfg)
+
+	return &db
+}
+
+func ConnectDatabase(databaseName string, cfg config.DatabaseConfig) *gorm.DB {
+	db := connect_SQLITE(cfg.Folder, databaseName+".db")
+	if db == nil {
+		logging.Error("Failed to connect to database")
+		panic("Failed to connect to database")
+	}
+
+	migration.MigrateUserTables(db)
+	LoadUserData(db, cfg)
 
 	return db
 }
 
-func connect_SQLITE(databaseNameFolder string) *gorm.DB {
-	queryStr := filepath.Join(databaseNameFolder, databaseMainName)
-	db, err := gorm.Open(sqlite.Open(queryStr), &gorm.Config{Logger: logger.Discard})
-	if err != nil {
-		logging.Error("Error connecting to the SQLite database:", err)
-		return nil
-	}
-
-	return db
-}
-
-func connect_POSTGRE(host, user, password, dbname, port string) *gorm.DB {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=UTC", host, user, password, dbname, port)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: logger.Discard})
-	if err != nil {
-		logging.Error("Error connecting to the PostgreSQL database:", err)
-		return nil
-	}
-
-	return db
-}
-
-func Clear() {
-	if db != nil {
-		dbConn, _ := db.DB()
-		if err := dbConn.Close(); err != nil {
-			logging.Error("Error closing database connection:", err)
-			return
-		}
-	}
-
-	execPath, err := os.Executable()
-	if err != nil {
-		logging.Error("Error getting executable path:", err)
+func (db *Database) Close(folder string, delete bool) {
+	if main, err := db.MainDb.DB(); err != nil {
 		return
+	} else {
+		main.Close()
 	}
-	databaseNameFolder := filepath.Join(filepath.Dir(execPath), "..", "database")
 
-	if _, err := os.Stat(databaseNameFolder); err == nil {
-		if err := os.RemoveAll(databaseNameFolder); err != nil {
-			logging.Error("Error deleting database folder:", err)
+	if system, err := db.SystemDb.DB(); err != nil {
+		return
+	} else {
+		system.Close()
+	}
+
+	if db.Database != nil {
+		if database, err := db.Database.DB(); err != nil {
 			return
+		} else {
+			database.Close()
+		}
+	}
+
+	if delete {
+		dbFiles := []string{mainDbName, systemDbName}
+		for _, dbFile := range dbFiles {
+			dbPath := filepath.Join(folder, dbFile+".db")
+			if err := os.Remove(dbPath); err != nil {
+				fmt.Printf("Error removing %s: %v\n", dbPath, err)
+			}
 		}
 	}
 }
