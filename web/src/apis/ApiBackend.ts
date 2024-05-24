@@ -1,19 +1,15 @@
 import { authenticated_get, authenticated_post, basic_get, basic_post } from "../utils/fetch/fetch";
+import { mockLogin, mockGetWorkspaces } from '../utils/mock/mockServices';
+import { ENABLE_MOCK } from '../consts/consts';
 
 // const config = `${document.location.protocol}//${document.location.host}`;
 
 const BASE = "http://localhost:8080";
 
-interface User {
-    username: string;
-    password: string;
-}
-
 interface Token {
     guid: string;
     token: string;
 }
-
 interface TemplateProps {
     [key: string]: any;
 }
@@ -37,6 +33,9 @@ interface CheckInInstance {
 const ApiBackend = {
     Auth: {
         Login: async (user: { username: string; password: string; workspace: string }) => {
+            if (ENABLE_MOCK) {
+                return mockLogin(user.username, user.password, user.workspace);
+            }
             const url = `${BASE}/api/auth/login`;
             return await basic_post(url, user);
         },
@@ -130,6 +129,9 @@ const ApiBackend = {
     },
     Workspace: {
         Get: async () => {
+            if (ENABLE_MOCK) {
+                return mockGetWorkspaces();
+            }
             const url = `${BASE}/api/workspace/get`;
             return await basic_get(url);
         },

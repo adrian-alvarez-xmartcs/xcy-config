@@ -9,3 +9,5 @@
 // }
 
 export const logErrors = true
+
+export const ENABLE_MOCK = true;
